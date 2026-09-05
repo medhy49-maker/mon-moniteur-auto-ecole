@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Instructors
+model Instructor {
+  id               String    @id @default(uuid())
+  firstName        String    @db.VarChar(100)
+  lastName         String    @db.VarChar(100)
+  email            String    @unique
+  phone            String
+  licenseNumber    String    @unique @db.VarChar(20)
+  status           String    @default("active") // active, inactive, suspended
+  biography        String?   @db.Text
+  profilePicture   String?   @db.Text
+  
+  lessons          Lesson[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("instructors")
+}
+
+// Students
+model Student {
+  id               String    @id @default(uuid())
+  firstName        String    @db.VarChar(100)
+  lastName         String    @db.VarChar(100)
+  email            String    @unique
+  phone            String
+  dateOfBirth      DateTime
+  licenseNumber    String    @unique @db.VarChar(20)
+  level            String    @default("beginner") // beginner, intermediate, advanced, completed
+  status           String    @default("active") // active, inactive, suspended
+  profilePicture   String?   @db.Text
+  hoursCompleted   Int       @default(0)
+  
+  lessons          Lesson[]
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("students")
+}
+
+// Lessons
+model Lesson {
+  id               String    @id @default(uuid())
+  title            String    @db.VarChar(255)
+  description      String?   @db.Text
+  scheduledAt      DateTime
+  startedAt        DateTime?
+  endedAt          DateTime?
+  duration         Int       @default(0) // in minutes
+  type             String    // theory, practice, exam
+  status           String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  rating           Int?      // 1-5 stars
+  feedback         String?   @db.Text
+  location         String?   @db.VarChar(100)
+  
+  instructorId     String
+  instructor       Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("lessons")
+}
