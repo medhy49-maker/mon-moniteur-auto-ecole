@@ -1,18 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  });
-
-  // Global validation pipe
+  // Validation globale
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -21,24 +15,26 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger/OpenAPI documentation
+  // Configuration Swagger
   const config = new DocumentBuilder()
-    .setTitle('Mon Moniteur Auto-Ecole API')
-    .setDescription('API pour la gestion des auto-écoles')
+    .setTitle('API Mon Moniteur Auto-Ecole')
+    .setDescription('API pour la gestion des leçons de conduite')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addTag('Instructors', 'Gestion des instructeurs')
+    .addTag('Students', 'Gestion des étudiants')
+    .addTag('Lessons', 'Gestion des leçons')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3001;
+  // CORS
+  app.enableCors();
+
+  const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
+  console.log(`Application is running on: http://localhost:${port}`);
+  console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Bootstrap error:', error);
-  process.exit(1);
-});
+bootstrap();

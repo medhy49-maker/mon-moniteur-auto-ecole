@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { InstructorModule } from './modules/instructors/instructor.module';
+import { StudentModule } from './modules/students/student.module';
+import { LessonModule } from './modules/lessons/lesson.module';
+import { Instructor } from './modules/instructors/instructor.entity';
+import { Student } from './modules/students/student.entity';
+import { Lesson } from './modules/lessons/lesson.entity';
 
 @Module({
   imports: [
@@ -12,17 +16,18 @@ import { AppService } from './app.service';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DATABASE_HOST || 'localhost',
-      port: parseInt(process.env.DATABASE_PORT || '5432'),
-      username: process.env.DATABASE_USER || 'user',
-      password: process.env.DATABASE_PASSWORD || 'password',
-      database: process.env.DATABASE_NAME || 'mon_moniteur_auto_ecole',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV === 'development',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'password',
+      database: process.env.DB_NAME || 'auto_ecole',
+      entities: [Instructor, Student, Lesson],
+      synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
+    InstructorModule,
+    StudentModule,
+    LessonModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
