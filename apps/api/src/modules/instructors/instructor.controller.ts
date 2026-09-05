@@ -7,17 +7,18 @@ import {
   Param,
   Delete,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { InstructorService } from './instructor.service';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
-import { Instructor } from './instructor.entity';
 
 @ApiTags('Instructors')
 @Controller('instructors')
@@ -30,7 +31,6 @@ export class InstructorController {
   @ApiResponse({
     status: 201,
     description: 'Instructeur créé avec succès',
-    type: Instructor,
   })
   create(@Body() createInstructorDto: CreateInstructorDto) {
     return this.instructorService.create(createInstructorDto);
@@ -41,10 +41,23 @@ export class InstructorController {
   @ApiResponse({
     status: 200,
     description: 'Liste des instructeurs',
-    type: [Instructor],
   })
   findAll() {
     return this.instructorService.findAll();
+  }
+
+  @Get('email/:email')
+  @ApiOperation({ summary: 'Obtenir un instructeur par email' })
+  @ApiParam({ name: 'email', type: 'string' })
+  findByEmail(@Param('email') email: string) {
+    return this.instructorService.findByEmail(email);
+  }
+
+  @Get('status/:status')
+  @ApiOperation({ summary: 'Obtenir les instructeurs par statut' })
+  @ApiParam({ name: 'status', type: 'string' })
+  findByStatus(@Param('status') status: string) {
+    return this.instructorService.findByStatus(status);
   }
 
   @Get(':id')
@@ -53,7 +66,6 @@ export class InstructorController {
   @ApiResponse({
     status: 200,
     description: 'Instructeur trouvé',
-    type: Instructor,
   })
   @ApiResponse({ status: 404, description: 'Instructeur non trouvé' })
   findOne(@Param('id') id: string) {
@@ -66,7 +78,6 @@ export class InstructorController {
   @ApiResponse({
     status: 200,
     description: 'Instructeur mis à jour',
-    type: Instructor,
   })
   update(
     @Param('id') id: string,

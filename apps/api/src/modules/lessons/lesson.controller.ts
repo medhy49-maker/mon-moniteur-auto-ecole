@@ -19,7 +19,6 @@ import {
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { Lesson } from './lesson.entity';
 
 @ApiTags('Lessons')
 @Controller('lessons')
@@ -32,7 +31,6 @@ export class LessonController {
   @ApiResponse({
     status: 201,
     description: 'Leçon créée avec succès',
-    type: Lesson,
   })
   create(@Body() createLessonDto: CreateLessonDto) {
     return this.lessonService.create(createLessonDto);
@@ -43,7 +41,6 @@ export class LessonController {
   @ApiResponse({
     status: 200,
     description: 'Liste des leçons',
-    type: [Lesson],
   })
   findAll() {
     return this.lessonService.findAll();
@@ -76,7 +73,6 @@ export class LessonController {
   @ApiResponse({
     status: 200,
     description: 'Leçon trouvée',
-    type: Lesson,
   })
   @ApiResponse({ status: 404, description: 'Leçon non trouvée' })
   findOne(@Param('id') id: string) {
@@ -89,7 +85,6 @@ export class LessonController {
   @ApiResponse({
     status: 200,
     description: 'Leçon mise à jour',
-    type: Lesson,
   })
   update(
     @Param('id') id: string,
@@ -112,10 +107,14 @@ export class LessonController {
   @ApiQuery({ name: 'feedback', type: 'string', required: false })
   completeLesson(
     @Param('id') id: string,
-    @Query('rating') rating?: number,
+    @Query('rating') rating?: string,
     @Query('feedback') feedback?: string,
   ) {
-    return this.lessonService.completeLesson(id, rating, feedback);
+    return this.lessonService.completeLesson(
+      id,
+      rating ? parseInt(rating, 10) : undefined,
+      feedback,
+    );
   }
 
   @Patch(':id/cancel')

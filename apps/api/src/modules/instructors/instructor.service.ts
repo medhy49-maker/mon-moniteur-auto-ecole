@@ -1,32 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Instructor } from './instructor.entity';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '@/services/prisma.service';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class InstructorService {
-  constructor(
-    @InjectRepository(Instructor)
-    private readonly instructorRepository: Repository<Instructor>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(createInstructorDto: CreateInstructorDto): Promise<Instructor> {
-    const instructor = this.instructorRepository.create(createInstructorDto);
-    return await this.instructorRepository.save(instructor);
+  async create(createInstructorDto: CreateInstructorDto) {
+    try {
+      return await this.prisma.instructor.create({
+        data: createInstructorDto,
+        include: { lessons: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `Instructor with ${error.meta?.target?.[0]} already exists`,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  async findAll(): Promise<Instructor[]> {
-    return await this.instructorRepository.find({
-      relations: ['lessons'],
+  async findAll() {
+    return await this.prisma.instructor.findMany({
+      include: { lessons: true },
     });
   }
 
-  async findOne(id: string): Promise<Instructor> {
-    const instructor = await this.instructorRepository.findOne({
+  async findOne(id: string) {
+    const instructor = await this.prisma.instructor.findUnique({
       where: { id },
-      relations: ['lessons'],
+      include: { lessons: true },
     });
     if (!instructor) {
       throw new NotFoundException(`Instructor with ID ${id} not found`);
@@ -34,9 +43,10 @@ export class InstructorService {
     return instructor;
   }
 
-  async findByEmail(email: string): Promise<Instructor> {
-    const instructor = await this.instructorRepository.findOne({
+  async findByEmail(email: string) {
+    const instructor = await this.prisma.instructor.findUnique({
       where: { email },
+      include: { lessons: true },
     });
     if (!instructor) {
       throw new NotFoundException(`Instructor with email ${email} not found`);
@@ -44,13 +54,47 @@ export class InstructorService {
     return instructor;
   }
 
-  async update(id: string, updateInstructorDto: UpdateInstructorDto): Promise<Instructor> {
-    await this.instructorRepository.update(id, updateInstructorDto);
-    return this.findOne(id);
+  async findByStatus(status: string) {
+    return await this.prisma.instructor.findMany({
+      where: { status },
+      include: { lessons: true },
+    });
   }
 
-  async remove(id: string): Promise<void> {
-    const instructor = await this.findOne(id);
-    await this.instructorRepository.remove(instructor);
+  async update(id: string, updateInstructorDto: UpdateInstructorDto) {
+    try {
+      return await this.prisma.instructor.update({
+        where: { id },
+        data: updateInstructorDto,
+        include: { lessons: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Instructor with ID ${id} not found`);
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `Instructor with ${error.meta?.target?.[0]} already exists`,
+          );
+        }
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      return await this.prisma.instructor.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Instructor with ID ${id} not found`);
+        }
+      }
+      throw error;
+    }
   }
 }

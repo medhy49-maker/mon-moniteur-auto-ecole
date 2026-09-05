@@ -19,7 +19,6 @@ import {
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
-import { Student } from './student.entity';
 
 @ApiTags('Students')
 @Controller('students')
@@ -32,7 +31,6 @@ export class StudentController {
   @ApiResponse({
     status: 201,
     description: 'Étudiant créé avec succès',
-    type: Student,
   })
   create(@Body() createStudentDto: CreateStudentDto) {
     return this.studentService.create(createStudentDto);
@@ -43,10 +41,16 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Liste des étudiants',
-    type: [Student],
   })
   findAll() {
     return this.studentService.findAll();
+  }
+
+  @Get('email/:email')
+  @ApiOperation({ summary: 'Obtenir un étudiant par email' })
+  @ApiParam({ name: 'email', type: 'string' })
+  findByEmail(@Param('email') email: string) {
+    return this.studentService.findByEmail(email);
   }
 
   @Get('level/:level')
@@ -56,13 +60,19 @@ export class StudentController {
     return this.studentService.findByLevel(level);
   }
 
+  @Get('status/:status')
+  @ApiOperation({ summary: 'Obtenir les étudiants par statut' })
+  @ApiParam({ name: 'status', type: 'string' })
+  findByStatus(@Param('status') status: string) {
+    return this.studentService.findByStatus(status);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtenir un étudiant par ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({
     status: 200,
     description: 'Étudiant trouvé',
-    type: Student,
   })
   @ApiResponse({ status: 404, description: 'Étudiant non trouvé' })
   findOne(@Param('id') id: string) {
@@ -75,7 +85,6 @@ export class StudentController {
   @ApiResponse({
     status: 200,
     description: 'Étudiant mis à jour',
-    type: Student,
   })
   update(
     @Param('id') id: string,
@@ -84,12 +93,15 @@ export class StudentController {
     return this.studentService.update(id, updateStudentDto);
   }
 
-  @Patch(':id/hours')
-  @ApiOperation({ summary: 'Ajouter des heures à un étudiant' })
+  @Patch(':id/increment-hours')
+  @ApiOperation({ summary: 'Incrémenter les heures complétées' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiQuery({ name: 'hours', type: 'number' })
-  incrementHours(@Param('id') id: string, @Query('hours') hours: number) {
-    return this.studentService.incrementHours(id, hours);
+  @ApiQuery({ name: 'hours', type: 'number', example: 2 })
+  incrementHours(
+    @Param('id') id: string,
+    @Query('hours') hours: string,
+  ) {
+    return this.studentService.incrementHours(id, parseInt(hours, 10));
   }
 
   @Delete(':id')

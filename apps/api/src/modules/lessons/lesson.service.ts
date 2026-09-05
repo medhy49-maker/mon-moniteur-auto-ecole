@@ -1,33 +1,44 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Lesson } from './lesson.entity';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '@/services/prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class LessonService {
-  constructor(
-    @InjectRepository(Lesson)
-    private readonly lessonRepository: Repository<Lesson>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(createLessonDto: CreateLessonDto): Promise<Lesson> {
-    const lesson = this.lessonRepository.create(createLessonDto);
-    lesson.status = 'scheduled';
-    return await this.lessonRepository.save(lesson);
+  async create(createLessonDto: CreateLessonDto) {
+    try {
+      return await this.prisma.lesson.create({
+        data: {
+          ...createLessonDto,
+          status: 'scheduled',
+        },
+        include: { instructor: true, student: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new ConflictException(
+            'Instructor or Student not found',
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  async findAll(): Promise<Lesson[]> {
-    return await this.lessonRepository.find({
-      relations: ['instructor', 'student'],
+  async findAll() {
+    return await this.prisma.lesson.findMany({
+      include: { instructor: true, student: true },
     });
   }
 
-  async findOne(id: string): Promise<Lesson> {
-    const lesson = await this.lessonRepository.findOne({
+  async findOne(id: string) {
+    const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      relations: ['instructor', 'student'],
+      include: { instructor: true, student: true },
     });
     if (!lesson) {
       throw new NotFoundException(`Lesson with ID ${id} not found`);
@@ -35,71 +46,103 @@ export class LessonService {
     return lesson;
   }
 
-  async findByStudent(studentId: string): Promise<Lesson[]> {
-    return await this.lessonRepository.find({
+  async findByStudent(studentId: string) {
+    return await this.prisma.lesson.findMany({
       where: { studentId },
-      relations: ['instructor', 'student'],
+      include: { instructor: true, student: true },
     });
   }
 
-  async findByInstructor(instructorId: string): Promise<Lesson[]> {
-    return await this.lessonRepository.find({
+  async findByInstructor(instructorId: string) {
+    return await this.prisma.lesson.findMany({
       where: { instructorId },
-      relations: ['instructor', 'student'],
+      include: { instructor: true, student: true },
     });
   }
 
-  async findByStatus(status: string): Promise<Lesson[]> {
-    return await this.lessonRepository.find({
+  async findByStatus(status: string) {
+    return await this.prisma.lesson.findMany({
       where: { status },
-      relations: ['instructor', 'student'],
+      include: { instructor: true, student: true },
     });
   }
 
-  async update(id: string, updateLessonDto: UpdateLessonDto): Promise<Lesson> {
-    await this.lessonRepository.update(id, updateLessonDto);
-    return this.findOne(id);
+  async update(id: string, updateLessonDto: UpdateLessonDto) {
+    try {
+      return await this.prisma.lesson.update({
+        where: { id },
+        data: updateLessonDto,
+        include: { instructor: true, student: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Lesson with ID ${id} not found`);
+        }
+      }
+      throw error;
+    }
   }
 
-  async startLesson(id: string): Promise<Lesson> {
+  async startLesson(id: string) {
     const lesson = await this.findOne(id);
     if (lesson.status !== 'scheduled') {
       throw new BadRequestException('Only scheduled lessons can be started');
     }
-    lesson.status = 'in_progress';
-    lesson.startedAt = new Date();
-    return await this.lessonRepository.save(lesson);
+    return await this.prisma.lesson.update({
+      where: { id },
+      data: {
+        status: 'in_progress',
+        startedAt: new Date(),
+      },
+      include: { instructor: true, student: true },
+    });
   }
 
-  async completeLesson(id: string, rating?: number, feedback?: string): Promise<Lesson> {
+  async completeLesson(id: string, rating?: number, feedback?: string) {
     const lesson = await this.findOne(id);
     if (lesson.status !== 'in_progress') {
       throw new BadRequestException('Only in-progress lessons can be completed');
     }
-    lesson.status = 'completed';
-    lesson.endedAt = new Date();
+    const endedAt = new Date();
+    let duration = lesson.duration;
     if (lesson.startedAt) {
-      lesson.duration = Math.round(
-        (lesson.endedAt.getTime() - lesson.startedAt.getTime()) / 60000,
-      );
+      duration = Math.round((endedAt.getTime() - lesson.startedAt.getTime()) / 60000);
     }
-    if (rating) {
-      lesson.rating = rating;
-    }
-    if (feedback) {
-      lesson.feedback = feedback;
-    }
-    return await this.lessonRepository.save(lesson);
+    return await this.prisma.lesson.update({
+      where: { id },
+      data: {
+        status: 'completed',
+        endedAt,
+        duration,
+        rating,
+        feedback,
+      },
+      include: { instructor: true, student: true },
+    });
   }
 
-  async cancelLesson(id: string): Promise<Lesson> {
+  async cancelLesson(id: string) {
     const lesson = await this.findOne(id);
-    lesson.status = 'cancelled';
-    return await this.lessonRepository.save(lesson);
+    return await this.prisma.lesson.update({
+      where: { id },
+      data: { status: 'cancelled' },
+      include: { instructor: true, student: true },
+    });
   }
 
-  async remove(id: string): Promise<void> {
-    const lesson = await this.findOne(id);
-    await this.lessonRepository.remove(lesson);
+  async remove(id: string) {
+    try {
+      return await this.prisma.lesson.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Lesson with ID ${id} not found`);
+        }
+      }
+      throw error;
+    }
   }
 }

@@ -1,32 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Student } from './student.entity';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from '@/services/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class StudentService {
-  constructor(
-    @InjectRepository(Student)
-    private readonly studentRepository: Repository<Student>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(createStudentDto: CreateStudentDto): Promise<Student> {
-    const student = this.studentRepository.create(createStudentDto);
-    return await this.studentRepository.save(student);
+  async create(createStudentDto: CreateStudentDto) {
+    try {
+      return await this.prisma.student.create({
+        data: createStudentDto,
+        include: { lessons: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `Student with ${error.meta?.target?.[0]} already exists`,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  async findAll(): Promise<Student[]> {
-    return await this.studentRepository.find({
-      relations: ['lessons'],
+  async findAll() {
+    return await this.prisma.student.findMany({
+      include: { lessons: true },
     });
   }
 
-  async findOne(id: string): Promise<Student> {
-    const student = await this.studentRepository.findOne({
+  async findOne(id: string) {
+    const student = await this.prisma.student.findUnique({
       where: { id },
-      relations: ['lessons'],
+      include: { lessons: true },
     });
     if (!student) {
       throw new NotFoundException(`Student with ID ${id} not found`);
@@ -34,9 +43,10 @@ export class StudentService {
     return student;
   }
 
-  async findByEmail(email: string): Promise<Student> {
-    const student = await this.studentRepository.findOne({
+  async findByEmail(email: string) {
+    const student = await this.prisma.student.findUnique({
       where: { email },
+      include: { lessons: true },
     });
     if (!student) {
       throw new NotFoundException(`Student with email ${email} not found`);
@@ -44,25 +54,75 @@ export class StudentService {
     return student;
   }
 
-  async findByLevel(level: string): Promise<Student[]> {
-    return await this.studentRepository.find({
+  async findByLevel(level: string) {
+    return await this.prisma.student.findMany({
       where: { level },
+      include: { lessons: true },
     });
   }
 
-  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<Student> {
-    await this.studentRepository.update(id, updateStudentDto);
-    return this.findOne(id);
+  async findByStatus(status: string) {
+    return await this.prisma.student.findMany({
+      where: { status },
+      include: { lessons: true },
+    });
   }
 
-  async remove(id: string): Promise<void> {
-    const student = await this.findOne(id);
-    await this.studentRepository.remove(student);
+  async update(id: string, updateStudentDto: UpdateStudentDto) {
+    try {
+      return await this.prisma.student.update({
+        where: { id },
+        data: updateStudentDto,
+        include: { lessons: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Student with ID ${id} not found`);
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            `Student with ${error.meta?.target?.[0]} already exists`,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  async incrementHours(id: string, hours: number): Promise<Student> {
-    const student = await this.findOne(id);
-    student.hoursCompleted += hours;
-    return await this.studentRepository.save(student);
+  async remove(id: string) {
+    try {
+      return await this.prisma.student.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Student with ID ${id} not found`);
+        }
+      }
+      throw error;
+    }
+  }
+
+  async incrementHours(id: string, hours: number) {
+    try {
+      return await this.prisma.student.update({
+        where: { id },
+        data: {
+          hoursCompleted: {
+            increment: hours,
+          },
+        },
+        include: { lessons: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Student with ID ${id} not found`);
+        }
+      }
+      throw error;
+    }
   }
 }
