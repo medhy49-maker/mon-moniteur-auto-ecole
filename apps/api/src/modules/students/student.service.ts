@@ -17,8 +17,10 @@ export class StudentService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
+          const target = error.meta?.target as string[] | undefined;
+          const field = target?.[0] ?? 'field';
           throw new ConflictException(
-            `Student with ${error.meta?.target?.[0]} already exists`,
+            `Student with ${field} already exists`,
           );
         }
       }
@@ -81,8 +83,10 @@ export class StudentService {
           throw new NotFoundException(`Student with ID ${id} not found`);
         }
         if (error.code === 'P2002') {
+          const target = error.meta?.target as string[] | undefined;
+          const field = target?.[0] ?? 'field';
           throw new ConflictException(
-            `Student with ${error.meta?.target?.[0]} already exists`,
+            `Student with ${field} already exists`,
           );
         }
       }
