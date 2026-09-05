@@ -1,3 +1,14 @@
+-- The instructor, student, and lesson tables are managed by the preceding
+-- Prisma migration. Do not apply this migration as the database baseline.
+DO $$
+BEGIN
+    IF to_regclass('public.instructors') IS NULL
+        OR to_regclass('public.students') IS NULL
+        OR to_regclass('public.lessons') IS NULL THEN
+        RAISE EXCEPTION 'The existing Prisma domain schema must be migrated before applying the authentication foundation.';
+    END IF;
+END $$;
+
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'SCHOOL_ADMIN', 'INSTRUCTOR', 'STUDENT');
 
@@ -34,65 +45,11 @@ CREATE TABLE "refresh_tokens" (
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "instructors" (
-    "id" TEXT NOT NULL,
-    "firstName" VARCHAR(100) NOT NULL,
-    "lastName" VARCHAR(100) NOT NULL,
-    "email" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
-    "licenseNumber" VARCHAR(20) NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'active',
-    "biography" TEXT,
-    "profilePicture" TEXT,
-    "userId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+-- AlterTable
+ALTER TABLE "instructors" ADD COLUMN "userId" TEXT;
 
-    CONSTRAINT "instructors_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "students" (
-    "id" TEXT NOT NULL,
-    "firstName" VARCHAR(100) NOT NULL,
-    "lastName" VARCHAR(100) NOT NULL,
-    "email" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
-    "dateOfBirth" TIMESTAMP(3) NOT NULL,
-    "licenseNumber" VARCHAR(20) NOT NULL,
-    "level" TEXT NOT NULL DEFAULT 'beginner',
-    "status" TEXT NOT NULL DEFAULT 'active',
-    "profilePicture" TEXT,
-    "hoursCompleted" INTEGER NOT NULL DEFAULT 0,
-    "userId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "students_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "lessons" (
-    "id" TEXT NOT NULL,
-    "title" VARCHAR(255) NOT NULL,
-    "description" TEXT,
-    "scheduledAt" TIMESTAMP(3) NOT NULL,
-    "startedAt" TIMESTAMP(3),
-    "endedAt" TIMESTAMP(3),
-    "duration" INTEGER NOT NULL DEFAULT 0,
-    "type" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'scheduled',
-    "rating" INTEGER,
-    "feedback" TEXT,
-    "location" VARCHAR(100),
-    "instructorId" TEXT NOT NULL,
-    "studentId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "lessons_pkey" PRIMARY KEY ("id")
-);
+-- AlterTable
+ALTER TABLE "students" ADD COLUMN "userId" TEXT;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
@@ -110,19 +67,7 @@ CREATE INDEX "refresh_tokens_familyId_idx" ON "refresh_tokens"("familyId");
 CREATE INDEX "refresh_tokens_expiresAt_idx" ON "refresh_tokens"("expiresAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "instructors_email_key" ON "instructors"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "instructors_licenseNumber_key" ON "instructors"("licenseNumber");
-
--- CreateIndex
 CREATE UNIQUE INDEX "instructors_userId_key" ON "instructors"("userId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "students_email_key" ON "students"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "students_licenseNumber_key" ON "students"("licenseNumber");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "students_userId_key" ON "students"("userId");
@@ -138,9 +83,3 @@ ALTER TABLE "instructors" ADD CONSTRAINT "instructors_userId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "students" ADD CONSTRAINT "students_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "lessons" ADD CONSTRAINT "lessons_instructorId_fkey" FOREIGN KEY ("instructorId") REFERENCES "instructors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "lessons" ADD CONSTRAINT "lessons_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
