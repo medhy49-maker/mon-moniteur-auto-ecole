@@ -9,8 +9,9 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
-    "db:migrate": "cd apps/api && npx prisma migrate dev",
-    "db:studio": "cd apps/api && npx prisma studio",
+    "db:generate": "pnpm --filter api run db:generate",
+    "db:migrate": "pnpm --filter api run db:migrate",
+    "db:studio": "pnpm --filter api run db:studio",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

@@ -10,6 +10,59 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  SCHOOL_ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  role          UserRole       @default(STUDENT)
+  status        UserStatus     @default(PENDING)
+  lastLoginAt   DateTime?
+
+  instructor    Instructor?
+  student       Student?
+  refreshTokens RefreshToken[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id            String        @id @default(uuid())
+  tokenHash     String        @unique
+  familyId      String
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  userAgent     String?       @db.Text
+  ipAddress     String?       @db.VarChar(45)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentTokenId String?
+  parentToken   RefreshToken? @relation("RefreshTokenRotation", fields: [parentTokenId], references: [id], onDelete: SetNull)
+  rotatedTokens RefreshToken[] @relation("RefreshTokenRotation")
+
+  createdAt     DateTime      @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
 // Instructors
 model Instructor {
   id               String    @id @default(uuid())
@@ -21,6 +74,8 @@ model Instructor {
   status           String    @default("active") // active, inactive, suspended
   biography        String?   @db.Text
   profilePicture   String?   @db.Text
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   
   lessons          Lesson[]
   
@@ -43,6 +98,8 @@ model Student {
   status           String    @default("active") // active, inactive, suspended
   profilePicture   String?   @db.Text
   hoursCompleted   Int       @default(0)
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   
   lessons          Lesson[]
   
