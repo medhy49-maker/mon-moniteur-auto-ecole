@@ -47,14 +47,14 @@ export class LessonController {
   }
 
   @Get('student/:studentId')
-  @ApiOperation({ summary: 'Obtenir les leçons d\'un étudiant' })
+  @ApiOperation({ summary: "Obtenir les leçons d'un étudiant" })
   @ApiParam({ name: 'studentId', type: 'string', format: 'uuid' })
   findByStudent(@Param('studentId') studentId: string) {
     return this.lessonService.findByStudent(studentId);
   }
 
   @Get('instructor/:instructorId')
-  @ApiOperation({ summary: 'Obtenir les leçons d\'un instructeur' })
+  @ApiOperation({ summary: "Obtenir les leçons d'un instructeur" })
   @ApiParam({ name: 'instructorId', type: 'string', format: 'uuid' })
   findByInstructor(@Param('instructorId') instructorId: string) {
     return this.lessonService.findByInstructor(instructorId);
@@ -86,10 +86,7 @@ export class LessonController {
     status: 200,
     description: 'Leçon mise à jour',
   })
-  update(
-    @Param('id') id: string,
-    @Body() updateLessonDto: UpdateLessonDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateLessonDto: UpdateLessonDto) {
     return this.lessonService.update(id, updateLessonDto);
   }
 

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '@/services/prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -20,9 +25,7 @@ export class LessonService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
-          throw new ConflictException(
-            'Instructor or Student not found',
-          );
+          throw new ConflictException('Instructor or Student not found');
         }
       }
       throw error;
@@ -102,12 +105,16 @@ export class LessonService {
   async completeLesson(id: string, rating?: number, feedback?: string) {
     const lesson = await this.findOne(id);
     if (lesson.status !== 'in_progress') {
-      throw new BadRequestException('Only in-progress lessons can be completed');
+      throw new BadRequestException(
+        'Only in-progress lessons can be completed',
+      );
     }
     const endedAt = new Date();
     let duration = lesson.duration;
     if (lesson.startedAt) {
-      duration = Math.round((endedAt.getTime() - lesson.startedAt.getTime()) / 60000);
+      duration = Math.round(
+        (endedAt.getTime() - lesson.startedAt.getTime()) / 60000,
+      );
     }
     return await this.prisma.lesson.update({
       where: { id },
@@ -123,7 +130,7 @@ export class LessonService {
   }
 
   async cancelLesson(id: string) {
-    const lesson = await this.findOne(id);
+    await this.findOne(id);
     return await this.prisma.lesson.update({
       where: { id },
       data: { status: 'cancelled' },

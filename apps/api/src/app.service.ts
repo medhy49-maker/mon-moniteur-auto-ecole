@@ -13,7 +13,7 @@ export class AppService {
 
   getRoot() {
     return {
-      message: 'Bienvenue à l\'API Mon Moniteur Auto-Ecole',
+      message: "Bienvenue à l'API Mon Moniteur Auto-Ecole",
       documentation: '/api',
       health: '/health',
     };

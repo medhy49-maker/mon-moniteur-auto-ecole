@@ -23,6 +23,7 @@ async function bootstrap() {
     .addTag('Instructors', 'Gestion des instructeurs')
     .addTag('Students', 'Gestion des étudiants')
     .addTag('Lessons', 'Gestion des leçons')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
