@@ -1,19 +1,30 @@
-import { IsEmail, IsPhoneNumber, IsEnum, IsOptional, IsString, IsDate, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsPhoneNumber,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsDate,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class CreateStudentDto {
-  @ApiProperty({ description: 'Prénom de l\'étudiant', example: 'Marie' })
+  @ApiProperty({ description: "Prénom de l'étudiant", example: 'Marie' })
   @IsString()
   @MaxLength(100)
   firstName: string;
 
-  @ApiProperty({ description: 'Nom de l\'étudiant', example: 'Martin' })
+  @ApiProperty({ description: "Nom de l'étudiant", example: 'Martin' })
   @IsString()
   @MaxLength(100)
   lastName: string;
 
-  @ApiProperty({ description: 'Email unique', example: 'marie.martin@example.com' })
+  @ApiProperty({
+    description: 'Email unique',
+    example: 'marie.martin@example.com',
+  })
   @IsEmail()
   email: string;
 

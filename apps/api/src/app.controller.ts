@@ -8,7 +8,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('health')
-  @ApiOperation({ summary: 'Vérifier la santé de l\'API' })
+  @ApiOperation({ summary: "Vérifier la santé de l'API" })
   @ApiResponse({
     status: 200,
     description: 'API est en bonne santé',
@@ -28,7 +28,7 @@ export class AppController {
   @ApiOperation({ summary: 'Endpoint racine' })
   @ApiResponse({
     status: 200,
-    description: 'Bienvenue à l\'API Mon Moniteur Auto-Ecole',
+    description: "Bienvenue à l'API Mon Moniteur Auto-Ecole",
   })
   getRoot() {
     return this.appService.getRoot();

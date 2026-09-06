@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '@/services/prisma.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
@@ -19,9 +23,7 @@ export class StudentService {
         if (error.code === 'P2002') {
           const target = error.meta?.target as string[] | undefined;
           const field = target?.[0] ?? 'field';
-          throw new ConflictException(
-            `Student with ${field} already exists`,
-          );
+          throw new ConflictException(`Student with ${field} already exists`);
         }
       }
       throw error;
@@ -85,9 +87,7 @@ export class StudentService {
         if (error.code === 'P2002') {
           const target = error.meta?.target as string[] | undefined;
           const field = target?.[0] ?? 'field';
-          throw new ConflictException(
-            `Student with ${field} already exists`,
-          );
+          throw new ConflictException(`Student with ${field} already exists`);
         }
       }
       throw error;

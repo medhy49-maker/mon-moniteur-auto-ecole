@@ -86,10 +86,7 @@ export class StudentController {
     status: 200,
     description: 'Étudiant mis à jour',
   })
-  update(
-    @Param('id') id: string,
-    @Body() updateStudentDto: UpdateStudentDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateStudentDto: UpdateStudentDto) {
     return this.studentService.update(id, updateStudentDto);
   }
 
@@ -97,10 +94,7 @@ export class StudentController {
   @ApiOperation({ summary: 'Incrémenter les heures complétées' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiQuery({ name: 'hours', type: 'number', example: 2 })
-  incrementHours(
-    @Param('id') id: string,
-    @Query('hours') hours: string,
-  ) {
+  incrementHours(@Param('id') id: string, @Query('hours') hours: string) {
     return this.studentService.incrementHours(id, parseInt(hours, 10));
   }
 

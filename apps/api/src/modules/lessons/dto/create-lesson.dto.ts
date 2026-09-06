@@ -1,9 +1,21 @@
-import { IsString, IsOptional, IsEnum, IsInt, IsUUID, IsDate, MaxLength, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsInt,
+  IsUUID,
+  IsDate,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class CreateLessonDto {
-  @ApiProperty({ description: 'Titre de la leçon', example: 'Code de la route - Module 1' })
+  @ApiProperty({
+    description: 'Titre de la leçon',
+    example: 'Code de la route - Module 1',
+  })
   @IsString()
   @MaxLength(255)
   title: string;
@@ -17,7 +29,10 @@ export class CreateLessonDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Date et heure planifiée', example: '2026-09-10T14:00:00Z' })
+  @ApiProperty({
+    description: 'Date et heure planifiée',
+    example: '2026-09-10T14:00:00Z',
+  })
   @Type(() => Date)
   @IsDate()
   scheduledAt: Date;
@@ -39,14 +54,14 @@ export class CreateLessonDto {
   type: string;
 
   @ApiProperty({
-    description: 'ID de l\'instructeur',
+    description: "ID de l'instructeur",
     example: 'uuid-string',
   })
   @IsUUID()
   instructorId: string;
 
   @ApiProperty({
-    description: 'ID de l\'étudiant',
+    description: "ID de l'étudiant",
     example: 'uuid-string',
   })
   @IsUUID()

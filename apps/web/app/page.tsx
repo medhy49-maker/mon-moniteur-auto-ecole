@@ -10,7 +10,7 @@ export default function Home() {
             La plateforme qui simplifie la formation à la conduite en France
           </p>
           <p className="text-gray-600 mb-4">
-            🚀 Page d'accueil en construction
+            🚀 Page d&apos;accueil en construction
           </p>
           <p className="text-gray-500 text-sm">
             Architecture Next.js configurée et prête pour le développement

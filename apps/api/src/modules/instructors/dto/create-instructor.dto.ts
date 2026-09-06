@@ -1,18 +1,28 @@
-import { IsEmail, IsPhoneNumber, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsPhoneNumber,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateInstructorDto {
-  @ApiProperty({ description: 'Prénom de l\'instructeur', example: 'Jean' })
+  @ApiProperty({ description: "Prénom de l'instructeur", example: 'Jean' })
   @IsString()
   @MaxLength(100)
   firstName: string;
 
-  @ApiProperty({ description: 'Nom de l\'instructeur', example: 'Dupont' })
+  @ApiProperty({ description: "Nom de l'instructeur", example: 'Dupont' })
   @IsString()
   @MaxLength(100)
   lastName: string;
 
-  @ApiProperty({ description: 'Email unique', example: 'jean.dupont@example.com' })
+  @ApiProperty({
+    description: 'Email unique',
+    example: 'jean.dupont@example.com',
+  })
   @IsEmail()
   email: string;
 
@@ -35,7 +45,7 @@ export class CreateInstructorDto {
 
   @ApiProperty({
     description: 'Biographie',
-    example: '10 ans d\'expérience en enseignement de conduite',
+    example: "10 ans d'expérience en enseignement de conduite",
     required: false,
   })
   @IsOptional()

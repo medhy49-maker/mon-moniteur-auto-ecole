@@ -10,71 +10,183 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  SCHOOL_ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum SchoolRole {
+  SCHOOL_ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+model DrivingSchool {
+  id     String @id @default(uuid())
+  name   String @db.VarChar(255)
+  status String @default("active")
+
+  memberships SchoolMembership[]
+  instructors Instructor[]
+  students    Student[]
+  lessons     Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driving_schools")
+}
+
+model SchoolMembership {
+  id        String           @id @default(uuid())
+  role      SchoolRole
+  status    MembershipStatus @default(PENDING)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolId  String
+  school    DrivingSchool    @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, schoolId])
+  @@index([userId])
+  @@index([schoolId, role])
+  @@map("school_memberships")
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(STUDENT)
+  status       UserStatus @default(PENDING)
+  lastLoginAt  DateTime?
+
+  instructor    Instructor?
+  student       Student?
+  memberships   SchoolMembership[]
+  refreshTokens RefreshToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id            String         @id @default(uuid())
+  tokenHash     String         @unique
+  familyId      String
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  userAgent     String?        @db.Text
+  ipAddress     String?        @db.VarChar(45)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentTokenId String?
+  parentToken   RefreshToken?  @relation("RefreshTokenRotation", fields: [parentTokenId], references: [id], onDelete: SetNull)
+  rotatedTokens RefreshToken[] @relation("RefreshTokenRotation")
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
 // Instructors
 model Instructor {
-  id               String    @id @default(uuid())
-  firstName        String    @db.VarChar(100)
-  lastName         String    @db.VarChar(100)
-  email            String    @unique
-  phone            String
-  licenseNumber    String    @unique @db.VarChar(20)
-  status           String    @default("active") // active, inactive, suspended
-  biography        String?   @db.Text
-  profilePicture   String?   @db.Text
-  
-  lessons          Lesson[]
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id             String         @id @default(uuid())
+  firstName      String         @db.VarChar(100)
+  lastName       String         @db.VarChar(100)
+  email          String         @unique
+  phone          String
+  licenseNumber  String         @unique @db.VarChar(20)
+  status         String         @default("active") // active, inactive, suspended
+  biography      String?        @db.Text
+  profilePicture String?        @db.Text
+  userId         String?        @unique
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  schoolId       String?
+  school         DrivingSchool? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
   @@map("instructors")
 }
 
 // Students
 model Student {
-  id               String    @id @default(uuid())
-  firstName        String    @db.VarChar(100)
-  lastName         String    @db.VarChar(100)
-  email            String    @unique
-  phone            String
-  dateOfBirth      DateTime
-  licenseNumber    String    @unique @db.VarChar(20)
-  level            String    @default("beginner") // beginner, intermediate, advanced, completed
-  status           String    @default("active") // active, inactive, suspended
-  profilePicture   String?   @db.Text
-  hoursCompleted   Int       @default(0)
-  
-  lessons          Lesson[]
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id             String         @id @default(uuid())
+  firstName      String         @db.VarChar(100)
+  lastName       String         @db.VarChar(100)
+  email          String         @unique
+  phone          String
+  dateOfBirth    DateTime
+  licenseNumber  String         @unique @db.VarChar(20)
+  level          String         @default("beginner") // beginner, intermediate, advanced, completed
+  status         String         @default("active") // active, inactive, suspended
+  profilePicture String?        @db.Text
+  hoursCompleted Int            @default(0)
+  userId         String?        @unique
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  schoolId       String?
+  school         DrivingSchool? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
   @@map("students")
 }
 
 // Lessons
 model Lesson {
-  id               String    @id @default(uuid())
-  title            String    @db.VarChar(255)
-  description      String?   @db.Text
-  scheduledAt      DateTime
-  startedAt        DateTime?
-  endedAt          DateTime?
-  duration         Int       @default(0) // in minutes
-  type             String    // theory, practice, exam
-  status           String    @default("scheduled") // scheduled, in_progress, completed, cancelled
-  rating           Int?      // 1-5 stars
-  feedback         String?   @db.Text
-  location         String?   @db.VarChar(100)
-  
-  instructorId     String
-  instructor       Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-  
-  studentId        String
-  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id          String         @id @default(uuid())
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  scheduledAt DateTime
+  startedAt   DateTime?
+  endedAt     DateTime?
+  duration    Int            @default(0) // in minutes
+  type        String // theory, practice, exam
+  status      String         @default("scheduled") // scheduled, in_progress, completed, cancelled
+  rating      Int? // 1-5 stars
+  feedback    String?        @db.Text
+  location    String?        @db.VarChar(100)
+  schoolId    String?
+  school      DrivingSchool? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
+  instructorId String
+  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
   @@map("lessons")
 }
